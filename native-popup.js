@@ -29,6 +29,25 @@
         
         return true;
     };
+
+    // merge two objects
+    var mergeOptions = function(obj1, obj2) {
+        var obj3 = {};
+        
+        for (var attrname in obj1) { 
+            if (obj1.hasOwnProperty(attrname)) {
+                obj3[attrname] = obj1[attrname]; 
+            }
+        }
+        
+        for (var attrname in obj2) { 
+            if (obj2.hasOwnProperty(attrname)) {
+                obj3[attrname] = obj2[attrname]; 
+            }
+        }
+        
+        return obj3;
+    };
     
     /**
      * @constructor
@@ -36,7 +55,10 @@
      * @param html - html inside the popup
      * @param buttons - [{caption: 'click me!', callback: function(popupObject) { ... }}, ...]
      */
-    var NativePopup = function(html, buttons) {
+    var NativePopup = function(html, buttons, options) {
+        
+        this.options = mergeOptions(this.defaultOptions, options);
+        
         this.id = Math.round(Math.random() * 100000);
         
         // popup parameters
@@ -65,12 +87,19 @@
             that.popup.style.left = ((parseInt(that.screenWidth, 10) / 2) - (parseInt(that.popup.clientWidth, 10) / 2)) + 'px';
         };
     };
+    
+    // default options parameter to the object
+    NativePopup.prototype.defaultOptions = {
+        width: 400,
+        height: 300
+    }
 
     /**
      * on every created DOM element of the popup, apply CSS styles (inline)
      */
     NativePopup.prototype._applyPopupStyles = function() {
-        var styleName;
+        var styleName,
+            that = this;
         
         // blur screen - white curtain
         var blurScreenStyles = {
@@ -91,11 +120,26 @@
         }
         
         // the popup itself
+        var minPopupWidth = Math.ceil(this.screenWidth * 0.30);
+        if (!that.options.width || that.options.width < minPopupWidth) that.options.width = minPopupWidth;
+        var maxPopupWidth = Math.ceil(this.screenWidth * 0.85);
+        if (!that.options.width || that.options.width > maxPopupWidth) that.options.width = minPopupWidth;
+        var minPopupHeight = Math.ceil(this.screenHeight * 0.30);
+        if (!that.options.height || that.options.height < minPopupHeight) that.options.height = minPopupHeight;
+        var maxPopupHeight = Math.ceil(this.screenHeight * 0.85);
+        if (!that.options.height || that.options.height > maxPopupHeight) that.options.height = maxPopupHeight;
+        
         var popupStyles = {
             border: '1px solid #CCC',
             boxShadow: '0 0 5px rgba(0,0,0,0.3)',
-            minWidth: '400px',
             position: 'fixed',
+            width: that.options.width + 'px',
+            height: that.options.height + 'px',
+            maxWidth: maxPopupWidth,
+            minWidth: minPopupWidth,
+            maxHeight: maxPopupHeight,
+            minHeight: minPopupHeight,
+            overflow: 'hidden',
             background: '#FFF',
             zIndex: 1002
         };
@@ -119,7 +163,7 @@
         // popup's content
         var popupContentStyles = {
             overflow: 'auto',
-            minHeight: '300px'
+            height: popupStyles.height
         };
         applyStyles(this.popupContent, popupContentStyles);
         
